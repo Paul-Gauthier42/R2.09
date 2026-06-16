@@ -1,3 +1,4 @@
+// src/pages/ProfilePage.jsx
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import Navbar from '../components/Navbar';
@@ -26,10 +27,7 @@ export default function ProfilePage({ session }) {
     setInfoMsg('');
 
     const { error } = await supabase.auth.updateUser({
-      data: {
-        full_name: fullName,
-        avatar_url: avatarUrl,
-      },
+      data: { full_name: fullName },
     });
 
     if (error) {
@@ -56,40 +54,6 @@ export default function ProfilePage({ session }) {
     }
   }
 
-  async function handleAvatarUpload(e) {
-    try {
-      setUploading(true);
-
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-
-      setAvatarUrl(data.publicUrl);
-
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_url: data.publicUrl },
-      });
-
-      if (updateError) throw updateError;
-
-      setInfoMsg('✅ Avatar mis à jour !');
-    } catch (error) {
-      setInfoErr(error.message);
-    } finally {
-      setUploading(false);
-    }
-  }
-
   return (
     <div style={{ minHeight: '100vh', background: '#F8FAFC' }}>
       <Navbar session={session} />
@@ -106,56 +70,17 @@ export default function ProfilePage({ session }) {
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
           }}
         >
-          <h2 style={{ marginBottom: '1rem' }}>Avatar</h2>
-
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="Avatar"
-              style={{
-                width: '96px',
-                height: '96px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                marginBottom: '1rem',
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '96px',
-                height: '96px',
-                borderRadius: '50%',
-                background: '#CBD5E1',
-                marginBottom: '1rem',
-              }}
-            />
-          )}
-
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleAvatarUpload}
-            disabled={uploading}
-          />
-
-          {uploading && <p>Upload en cours...</p>}
-        </section>
-
-        <section
-          style={{
-            background: 'white',
-            padding: '1.5rem',
-            borderRadius: '12px',
-            marginBottom: '1.5rem',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-          }}
-        >
           <h2 style={{ marginBottom: '1rem' }}>Informations générales</h2>
 
           <form onSubmit={handleSaveInfo}>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: 600,
+                }}
+              >
                 Email
               </label>
               <input
@@ -173,13 +98,20 @@ export default function ProfilePage({ session }) {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: 600,
+                }}
+              >
                 Nom complet
               </label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                placeholder="Votre nom complet"
                 style={{
                   width: '100%',
                   padding: '0.75rem',
@@ -220,19 +152,29 @@ export default function ProfilePage({ session }) {
           <h2 style={{ marginBottom: '1rem' }}>Mot de passe</h2>
 
           <form onSubmit={handleChangePassword}>
-            <input
-              type="password"
-              value={newPass}
-              onChange={(e) => setNewPass(e.target.value)}
-              placeholder="Nouveau mot de passe"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                marginBottom: '1rem',
-              }}
-            />
+            <div style={{ marginBottom: '1rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: 600,
+                }}
+              >
+                Nouveau mot de passe
+              </label>
+              <input
+                type="password"
+                value={newPass}
+                onChange={(e) => setNewPass(e.target.value)}
+                placeholder="Nouveau mot de passe"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                }}
+              />
+            </div>
 
             {passErr && <p style={{ color: '#DC2626' }}>{passErr}</p>}
             {passMsg && <p style={{ color: '#16A34A' }}>{passMsg}</p>}
@@ -240,6 +182,7 @@ export default function ProfilePage({ session }) {
             <button
               type="submit"
               style={{
+                marginTop: '1rem',
                 background: '#1A8C82',
                 color: 'white',
                 border: 'none',
